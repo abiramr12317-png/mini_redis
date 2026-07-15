@@ -1,5 +1,0 @@
-D:/Projects/mini_redis/build/CMakeFiles/mini-redis.dir
-D:/Projects/mini_redis/build/CMakeFiles/run-tests.dir
-D:/Projects/mini_redis/build/CMakeFiles/stress-test.dir
-D:/Projects/mini_redis/build/CMakeFiles/edit_cache.dir
-D:/Projects/mini_redis/build/CMakeFiles/rebuild_cache.dir

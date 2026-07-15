@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"D:/Projects/mini_redis/build/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
