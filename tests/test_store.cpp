@@ -6,6 +6,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "store.hpp"
+#include <thread>
 
 using miniredis::Store;
 
@@ -91,4 +92,56 @@ TEST_CASE("keys and values are case-sensitive") {
     s.set("Foo", "bar");
     CHECK_FALSE(s.get("foo").has_value());
     CHECK(s.get("Foo").has_value());
+}
+
+// ---- Milestone 2: TTL and expiration ----
+
+TEST_CASE("key with TTL is readable before it expires") {
+    Store s;
+    s.set("foo", "bar", std::chrono::seconds(2));
+    auto result = s.get("foo");
+    REQUIRE(result.has_value());
+    CHECK(*result == "bar");
+}
+
+TEST_CASE("key with TTL expires after the duration passes (passive expiration)") {
+    Store s;
+    s.set("foo", "bar", std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+    auto result = s.get("foo"); // get() itself should notice it's expired
+    CHECK_FALSE(result.has_value());
+}
+
+TEST_CASE("key with no TTL never expires") {
+    Store s;
+    s.set("permanent", "val"); // no ttl argument == no expiry
+    std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+    auto result = s.get("permanent");
+    REQUIRE(result.has_value());
+    CHECK(*result == "val");
+}
+
+TEST_CASE("active expiry removes an expired key even without a GET call") {
+    Store s;
+    s.set("foo", "bar", std::chrono::seconds(1));
+    s.start_active_expiry(std::chrono::milliseconds(200)); // sweep every 200ms
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+    // Note: no s.get("foo") call anywhere above this line.
+    // If len() == 0 here, the background sweep did its job on its own.
+    CHECK(s.len() == 0);
+
+    s.stop_active_expiry();
+}
+
+TEST_CASE("SET with TTL overwrites a previous non-expiring value") {
+    Store s;
+    s.set("foo", "permanent_value");
+    s.set("foo", "temporary_value", std::chrono::seconds(1));
+    auto result = s.get("foo");
+    REQUIRE(result.has_value());
+    CHECK(*result == "temporary_value"); // overwrite worked, and TTL applies now
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+    CHECK_FALSE(s.get("foo").has_value()); // and it expires as expected
 }

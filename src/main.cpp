@@ -9,7 +9,7 @@ int main() {
     miniredis::Store store;
     std::string line;
 
-    std::cout << "mini-redis (Milestone 1) — type SET/GET/DEL, or QUIT to exit\n";
+    std::cout << "mini-redis : type SET/GET/DEL, or QUIT to exit\n";
 
     while (std::getline(std::cin, line)) {
         std::istringstream iss(line);
@@ -26,14 +26,23 @@ int main() {
         const std::string& cmd = tokens[0];
 
         if (cmd == "SET") {
-            if (tokens.size() != 3) {
+            if (tokens.size() != 3 && tokens.size() != 5) {
                 std::cout << "ERR wrong number of arguments for SET\n";
                 continue;
             }
-            store.set(tokens[1], tokens[2]);
+            std::chrono::seconds ttl(0);
+            if (tokens.size() == 5) {
+                if (tokens[3] != "EX") {
+                    std::cout << "ERR expected EX before ttl value\n";
+                    continue;
+                }
+                ttl = std::chrono::seconds(std::stoi(tokens[4]));
+            }
+            store.set(tokens[1], tokens[2], ttl);
             std::cout << "OK\n";
-
-        } else if (cmd == "GET") {
+        } 
+        
+        else if (cmd == "GET") {  
             if (tokens.size() != 2) {
                 std::cout << "ERR wrong number of arguments for GET\n";
                 continue;
@@ -45,7 +54,9 @@ int main() {
                 std::cout << "(nil)\n";
             }
 
-        } else if (cmd == "DEL") {
+        } 
+        
+        else if (cmd == "DEL") {
             if (tokens.size() != 2) {
                 std::cout << "ERR wrong number of arguments for DEL\n";
                 continue;
@@ -53,10 +64,14 @@ int main() {
             bool deleted = store.del(tokens[1]);
             std::cout << (deleted ? "1" : "0") << "\n";
 
-        } else if (cmd == "QUIT") {
+        } 
+        
+        else if (cmd == "QUIT") {
             break;
 
-        } else {
+        } 
+        
+        else {
             std::cout << "ERR unknown command: " << cmd << "\n";
         }
     }
