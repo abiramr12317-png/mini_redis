@@ -5,16 +5,18 @@
 
 #include "store.hpp"
 
+using namespace std;
+
 int main() {
     miniredis::Store store;
-    std::string line;
+    string line;
 
-    std::cout << "mini-redis : type SET/GET/DEL, or QUIT to exit\n";
+    cout << "mini-redis : type SET/GET/DEL, or QUIT to exit\n";
 
-    while (std::getline(std::cin, line)) {
-        std::istringstream iss(line);
-        std::vector<std::string> tokens;
-        std::string tok;
+    while (getline(cin, line)) {
+        istringstream iss(line);
+        vector<string> tokens;
+        string tok;
         while (iss >> tok) {
             tokens.push_back(tok);
         }
@@ -23,46 +25,46 @@ int main() {
             continue;
         }
 
-        const std::string& cmd = tokens[0];
+        const string& cmd = tokens[0];
 
         if (cmd == "SET") {
             if (tokens.size() != 3 && tokens.size() != 5) {
-                std::cout << "ERR wrong number of arguments for SET\n";
+                cout << "ERR wrong number of arguments for SET\n";
                 continue;
             }
-            std::chrono::seconds ttl(0);
+            chrono::seconds ttl(0);
             if (tokens.size() == 5) {
                 if (tokens[3] != "EX") {
-                    std::cout << "ERR expected EX before ttl value\n";
+                    cout << "ERR expected EX before ttl value\n";
                     continue;
                 }
-                ttl = std::chrono::seconds(std::stoi(tokens[4]));
+                ttl = chrono::seconds(stoi(tokens[4]));
             }
             store.set(tokens[1], tokens[2], ttl);
-            std::cout << "OK\n";
+            cout << "OK\n";
         } 
         
         else if (cmd == "GET") {  
             if (tokens.size() != 2) {
-                std::cout << "ERR wrong number of arguments for GET\n";
+                cout << "ERR wrong number of arguments for GET\n";
                 continue;
             }
             auto result = store.get(tokens[1]);
             if (result.has_value()) {
-                std::cout << *result << "\n";
+                cout << *result << "\n";
             } else {
-                std::cout << "(nil)\n";
+                cout << "(nil)\n";
             }
 
         } 
         
         else if (cmd == "DEL") {
             if (tokens.size() != 2) {
-                std::cout << "ERR wrong number of arguments for DEL\n";
+                cout << "ERR wrong number of arguments for DEL\n";
                 continue;
             }
             bool deleted = store.del(tokens[1]);
-            std::cout << (deleted ? "1" : "0") << "\n";
+            cout << (deleted ? "1" : "0") << "\n";
 
         } 
         
@@ -72,7 +74,7 @@ int main() {
         } 
         
         else {
-            std::cout << "ERR unknown command: " << cmd << "\n";
+            cout << "ERR unknown command: " << cmd << "\n";
         }
     }
 

@@ -1,31 +1,33 @@
 #include "store.hpp"
 
+using namespace std;
+
 namespace miniredis {
 
-void Store::set(const std::string& key, const std::string& value,
-                  std::chrono::seconds ttl) {
+void Store::set(const string& key, const string& value,
+                  chrono::seconds ttl) {
     Entry e;
     e.value = value;
     if (ttl.count() > 0) {
         e.has_ttl = true;
-        e.expire_at = std::chrono::steady_clock::now() + ttl;
+        e.expire_at = chrono::steady_clock::now() + ttl;
     }
     data_[key] = e; // overwrite semantics unchanged from Milestone 1
 }
 
-std::optional<std::string> Store::get(const std::string& key) {
+optional<string> Store::get(const string& key) {
     auto it = data_.find(key);
-    if (it == data_.end()) return std::nullopt;
+    if (it == data_.end()) return nullopt;
 
     if(is_expired(it->second)) {
         data_.erase(it);
-        return std::nullopt;
+        return nullopt;
     }
 
     return it->second.value;
 }
 
-bool Store::del(const std::string& key) {
+bool Store::del(const string& key) {
     auto it = data_.find(key);
     if (it == data_.end()) {
         return false;
@@ -39,7 +41,7 @@ size_t Store::len() {
 }
 
 bool Store::is_expired(const Entry& e) const {
-    return e.has_ttl && std::chrono::steady_clock::now() >= e.expire_at;
+    return e.has_ttl && chrono::steady_clock::now() >= e.expire_at;
 }  
 
 void Store::sweep_expired() {
@@ -51,11 +53,11 @@ void Store::sweep_expired() {
     }
 }
 
-void Store::start_active_expiry(std::chrono::milliseconds interval) {
+void Store::start_active_expiry(chrono::milliseconds interval) {
     sweeper_running_ = true;
-    sweeper_ = std::thread([this, interval]() {
+    sweeper_ = thread([this, interval]() {
         while (sweeper_running_) {
-            std::this_thread::sleep_for(interval);
+            this_thread::sleep_for(interval);
             if (!sweeper_running_) break;
             sweep_expired();
         }
