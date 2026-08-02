@@ -145,3 +145,85 @@ TEST_CASE("SET with TTL overwrites a previous non-expiring value") {
     std::this_thread::sleep_for(std::chrono::milliseconds(1200));
     CHECK_FALSE(s.get("foo").has_value()); // and it expires as expected
 }
+
+// ---- Milestone 3: LRU eviction ----
+
+TEST_CASE("no eviction happens when max_keys is 0 (unlimited)") {
+    Store s(0);
+    for (int i = 0; i < 100; i++) s.set("k" + std::to_string(i), "v");
+    CHECK(s.len() == 100);
+}
+
+TEST_CASE("inserting past capacity evicts the least recently used key") {
+    Store s(3);
+    s.set("a", "1");
+    s.set("b", "2");
+    s.set("c", "3");
+    s.set("d", "4"); // over capacity -> "a" should be evicted
+
+    CHECK_FALSE(s.get("a").has_value());
+    REQUIRE(s.get("d").has_value());
+    CHECK(*s.get("d") == "4");
+    CHECK(s.len() == 3);
+}
+
+TEST_CASE("GET refreshes recency, changing future eviction order") {
+    Store s(3);
+    s.set("a", "1");
+    s.set("b", "2");
+    s.set("c", "3");
+
+    s.get("a"); // touch "a" -> now most recently used; "b" becomes LRU
+
+    s.set("d", "4"); // should evict "b", not "a"
+
+    CHECK(s.get("a").has_value());       // survived
+    CHECK_FALSE(s.get("b").has_value()); // evicted
+    CHECK(s.get("c").has_value());
+    CHECK(s.get("d").has_value());
+}
+
+TEST_CASE("overwriting an existing key never triggers eviction") {
+    Store s(3);
+    s.set("a", "1");
+    s.set("b", "2");
+    s.set("c", "3");
+    s.set("a", "1-updated"); // overwrite, not a new key
+
+    CHECK(s.len() == 3); // still exactly 3, nothing evicted
+    REQUIRE(s.get("a").has_value());
+    CHECK(*s.get("a") == "1-updated");
+    CHECK(s.get("b").has_value());
+    CHECK(s.get("c").has_value());
+}
+
+TEST_CASE("eviction prefers reclaiming an expired key over evicting a live one") {
+    Store s(3);
+    s.set("a", "1");                              // permanent
+    s.set("b", "2", std::chrono::seconds(1));      // will expire soon
+    s.set("c", "3");                               // permanent
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1200)); // "b" now expired
+
+    s.set("d", "4"); // over capacity: should reclaim expired "b", NOT evict "a"
+
+    CHECK(s.get("a").has_value());       // still alive: was NOT wrongly evicted
+    CHECK_FALSE(s.get("b").has_value()); // gone: expired, reclaimed
+    CHECK(s.get("c").has_value());
+    CHECK(s.get("d").has_value());
+    CHECK(s.len() == 3);
+}
+
+TEST_CASE("SET on existing key refreshes recency too, not just GET") {
+    Store s(3);
+    s.set("a", "1");
+    s.set("b", "2");
+    s.set("c", "3");
+
+    s.set("a", "1-updated"); // touch via SET, not GET
+
+    s.set("d", "4"); // should evict "b" (LRU), not "a"
+
+    CHECK(s.get("a").has_value());
+    CHECK_FALSE(s.get("b").has_value());
+}
