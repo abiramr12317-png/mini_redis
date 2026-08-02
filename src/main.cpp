@@ -8,7 +8,7 @@
 using namespace std;
 
 int main() {
-    miniredis::Store store;
+    miniredis::Store store(3); // Set a maximum of 3 keys for testing eviction
     string line;
 
     cout << "mini-redis : type SET/GET/DEL, or QUIT to exit\n";
