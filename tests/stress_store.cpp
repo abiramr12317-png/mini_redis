@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Stress-testing Store with N = " << N << " keys\n\n";
 
-    miniredis::Store store;
+    miniredis::Store store(0);
     std::mt19937 rng(42); // fixed seed: reproducible runs
 
     // Pre-generate keys/values so we're timing the store, not the RNG.

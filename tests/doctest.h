@@ -1,43 +1,3 @@
-// =============================================================
-// == DO NOT MODIFY THIS FILE BY HAND - IT IS AUTO GENERATED! ==
-// =============================================================
-//
-// doctest.h - the lightest feature-rich C++ single-header testing framework for unit tests and TDD
-//
-// Copyright (c) 2016-2023 Viktor Kirilov
-//
-// Distributed under the MIT Software License
-// See accompanying file LICENSE.txt or copy at
-// https://opensource.org/licenses/MIT
-//
-// The documentation can be found at the library's page:
-// https://github.com/doctest/doctest/blob/master/doc/markdown/readme.md
-//
-// =================================================================================================
-// =================================================================================================
-// =================================================================================================
-//
-// The library is heavily influenced by Catch - https://github.com/catchorg/Catch2
-// which uses the Boost Software License - Version 1.0
-// see here - https://github.com/catchorg/Catch2/blob/master/LICENSE.txt
-//
-// The concept of subcases (sections in Catch) and expression decomposition are from there.
-// Some parts of the code are taken directly:
-// - stringification - the detection of "ostream& operator<<(ostream&, const T&)" and StringMaker<>
-// - the Approx() helper class for floating point comparison
-// - colors in the console
-// - breaking into a debugger
-// - signal / SEH handling
-// - timer
-// - XmlWriter class - thanks to Phil Nash for allowing the direct reuse (AKA copy/paste)
-//
-// The expression decomposing templates are taken from lest - https://github.com/martinmoene/lest
-// which uses the Boost Software License - Version 1.0
-// see here - https://github.com/martinmoene/lest/blob/master/LICENSE.txt
-//
-// =================================================================================================
-// =================================================================================================
-// =================================================================================================
 
 #ifndef DOCTEST_LIBRARY_INCLUDED
 #define DOCTEST_LIBRARY_INCLUDED
@@ -9104,10 +9064,6 @@ using uchar = unsigned char;
         }
     }
 
-/* clang-format on */ /* NOLINTEND */
-// =================================================================================================
-// End of copy-pasted code from Catch
-// =================================================================================================
 
 } // namespace detail
 } // namespace doctest
