@@ -227,3 +227,70 @@ TEST_CASE("SET on existing key refreshes recency too, not just GET") {
     CHECK(s.get("a").has_value());
     CHECK_FALSE(s.get("b").has_value());
 }
+
+// ---- Customizable LRU cache size ----
+
+TEST_CASE("default constructor uses kDefaultMaxKeys") {
+    Store s;
+    CHECK(s.max_keys() == Store::kDefaultMaxKeys);
+}
+
+TEST_CASE("shrinking max_keys evicts immediately down to the new limit") {
+    Store s(10);
+    for (int i = 0; i < 10; i++) s.set("k" + std::to_string(i), "v");
+    CHECK(s.len() == 10);
+
+    s.set_max_keys(3); // shrink while already full
+
+    CHECK(s.max_keys() == 3);
+    CHECK(s.len() == 3); // trimmed immediately, no new SET needed to trigger it
+}
+
+TEST_CASE("shrinking keeps the most recently used keys, evicts the rest") {
+    Store s(5);
+    s.set("a", "1");
+    s.set("b", "2");
+    s.set("c", "3");
+    s.set("d", "4");
+    s.set("e", "5"); // recency order (MRU->LRU): e d c b a
+
+    s.set_max_keys(2); // should keep "e" and "d", evict a/b/c
+
+    CHECK(s.len() == 2);
+    CHECK(s.get("e").has_value());
+    CHECK(s.get("d").has_value());
+    CHECK_FALSE(s.get("c").has_value());
+    CHECK_FALSE(s.get("b").has_value());
+    CHECK_FALSE(s.get("a").has_value());
+}
+
+TEST_CASE("growing max_keys does not evict or restore anything") {
+    Store s(2);
+    s.set("a", "1");
+    s.set("b", "2");
+    s.set("c", "3"); // evicts "a" immediately, since capacity is 2
+
+    CHECK_FALSE(s.get("a").has_value());
+    CHECK(s.len() == 2);
+
+    s.set_max_keys(10); // grow
+
+    CHECK(s.max_keys() == 10);
+    CHECK(s.len() == 2);              // still just 2 -- "a" is NOT restored
+    CHECK_FALSE(s.get("a").has_value());
+
+    s.set("d", "4"); // now room for more, nothing should be evicted
+    CHECK(s.len() == 3);
+}
+
+TEST_CASE("setting max_keys to 0 disables eviction going forward") {
+    Store s(3);
+    s.set("a", "1");
+    s.set("b", "2");
+    s.set("c", "3");
+
+    s.set_max_keys(0); // unlimited from now on
+
+    for (int i = 0; i < 50; i++) s.set("extra" + std::to_string(i), "v");
+    CHECK(s.len() == 53); // 3 original + 50 new, nothing evicted
+}

@@ -8,7 +8,7 @@
 using namespace std;
 
 int main() {
-    miniredis::Store store(3); // Set a maximum of 3 keys for testing eviction
+    miniredis::Store store; // Set a maximum of 3 keys for testing eviction
     string line;
 
     cout << "mini-redis : type SET/GET/DEL, or QUIT to exit\n";
@@ -68,6 +68,25 @@ int main() {
 
         } 
         
+        else if (cmd == "MAXKEYS") {
+            if (tokens.size() == 1) {
+                cout << store.max_keys() << "\n";
+            } 
+            else if (tokens.size() == 2) {
+                try {
+                    size_t new_max = static_cast<size_t>(stoul(tokens[1]));
+                    store.set_max_keys(new_max);
+                    cout << "OK\n";
+                } 
+                catch (const exception&) {
+                    cout << "ERR invalid max_keys value\n";
+                }
+            } 
+            else {
+                cout << "ERR wrong number of arguments for MAXKEYS\n";
+            }
+        }        
+
         else if (cmd == "QUIT") {
             break;
 

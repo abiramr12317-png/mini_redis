@@ -61,6 +61,15 @@ size_t Store::len() {
     return data_.size();
 }
 
+void Store::set_max_keys(size_t new_max_keys) {
+    max_keys_ = new_max_keys;
+    evict_if_needed(); // if we just shrunk, trim down to the new limit right away
+}
+
+size_t Store::max_keys() const {
+    return max_keys_;
+}
+
 bool Store::is_expired(const Entry& e) const {
     return e.has_ttl && chrono::steady_clock::now() >= e.expire_at;
 }  

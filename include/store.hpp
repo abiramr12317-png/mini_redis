@@ -12,8 +12,8 @@ namespace miniredis {
 
 class Store {
 public:
-    explicit Store(size_t max_keys = 0) : max_keys_(max_keys) {}
-    // ttl == 0 seconds means "no expiry" (same behavior as Milestone 1's SET)
+    static constexpr size_t kDefaultMaxKeys = 10000;
+    explicit Store(size_t max_keys = kDefaultMaxKeys) : max_keys_(max_keys) {}
     void set(const std::string& key, const std::string& value,
               std::chrono::seconds ttl = std::chrono::seconds(0));
 
@@ -21,7 +21,10 @@ public:
     bool del(const std::string& key);
 
     size_t len(); // handy for testing active expiry — total live keys right now
-
+    
+    void set_max_keys(size_t new_max_keys);
+    size_t max_keys() const;
+    
     // Launches a background thread that periodically removes expired keys,
     // independent of whether anyone calls get() on them.
     void start_active_expiry(std::chrono::milliseconds interval);
@@ -46,7 +49,7 @@ private:
     std::unordered_map<std::string, Entry> data_;
     std::list<std::string> lru_;
     size_t max_keys_;
-    
+
     std::thread sweeper_;
     std::atomic<bool> sweeper_running_{false};
 };
